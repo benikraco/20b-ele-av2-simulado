@@ -18,8 +18,10 @@ sys.path.insert(0, str(Path.home()) + '/Z01-Tools/scripts/')
 from config import *
 from testeAssembly import compareRam, compareFromTestDir, clearTestDir
 from simulateCPU import simulateFromTestDir
+from compileALL import compileAll, compileAllNotify
 from assembler import assemblerFromTestDir
 from notificacao import testeAssemblySimulateNotif
+
 
 def testeAssembly(jar, testDir, nasmDir, hackDir, gui, verbose):
     cError, cLog = assemblerFromTestDir(jar, testDir, nasmDir, hackDir)
@@ -61,14 +63,42 @@ def testeAssembly(jar, testDir, nasmDir, hackDir, gui, verbose):
 
 
 if __name__ == "__main__":
+    os.system('cls' if os.name == 'nt' else 'clear')
     print("--======= INICIO ========--")
 
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-c", "--testDir", help="lista de arquivos a serem testados")
+    ap.add_argument("-v", "--verbose", help="log simulacao", action='store_true')
+    ap.add_argument("-g", "--gui", help="carrega model sim", action='store_true')
+    args = vars(ap.parse_args())
+
     pwd = os.path.dirname(os.path.abspath(__file__))
-    testDir = pwd+"/tests/"
-    nasm = [pwd+"/src/nasm/", ""]
+    if args["testDir"] is None:
+        testDir = pwd + '/'
+    else:
+        testDir = args["testDir"]
+
+    if args["verbose"]:
+        verbose = True
+    else:
+        verbose = False
+
+    if args["gui"]:
+        gui = True
+    else:
+        gui = False
+
+    nasm = [pwd+"/src/", pwd+"/src/examples/"]
     hack = pwd+"/bin/hack/"
 
-    error, log = testeAssembly(ASSEMBLER_JAR, testDir=testDir, nasmDir=nasm, hackDir=hack, gui=False, verbose=False)
+    error, log = testeAssembly(ASSEMBLER_JAR, testDir=testDir, nasmDir=nasm, hackDir=hack, gui=gui, verbose=verbose)
+
+    print("\n-------------------------")
+    print("- Reportando resultado   ")
+    print("-------------------------")
+
+    r = report(log, 'E', 'NASM')
+    r.send()
 
     print("\n--======== FIM ==========--")
     sys.exit(error)
